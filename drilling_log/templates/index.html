@@ -3,36 +3,25 @@
 <head>
     <title>Буровой журнал</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
     <h1>Буровой журнал</h1>
     
-    <!-- Простой индикатор статуса -->
-    <div id="status">
+    <!-- Статус онлайн/оффлайн -->
+    <div class="status">
         <p>Статус: <span id="status-text">Загрузка...</span></p>
     </div>
     
-    <p>Здесь скоро будет список скважин</p>
+    <h2>Мои скважины</h2>
+    
+    <!-- Контейнер для списка скважин -->
+    <div id="wells-list">
+        <p>Загрузка скважин...</p>
+    </div>
 
-    <script>
-        // Простейшая проверка онлайн/оффлайн статуса
-        function updateStatus() {
-            const statusElement = document.getElementById('status-text');
-            if (navigator.onLine) {
-                statusElement.textContent = '✅ Онлайн';
-                statusElement.style.color = 'green';
-            } else {
-                statusElement.textContent = '⚠️ Оффлайн';
-                statusElement.style.color = 'orange';
-            }
-        }
-        
-        // Слушаем изменения статуса сети
-        window.addEventListener('online', updateStatus);
-        window.addEventListener('offline', updateStatus);
-        
-        // Инициализируем при загрузке
-        updateStatus();
-    </script>
+    <!-- Подключаем JavaScript -->
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

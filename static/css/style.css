@@ -1,0 +1,30 @@
+/* Базовые стили для бурового журнала */
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+}
+
+.status {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+}
+
+.well-item {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #f9f9f9;
+}
+
+.well-item h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.well-item p {
+  margin: 5px 0;
+}
