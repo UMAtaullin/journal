@@ -1,14 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import WellViewSet
-from . import views
+from .views import WellViewSet, LayerViewSet, index
 
-# Создаем router для API
 router = DefaultRouter()
 router.register(r"wells", WellViewSet)
+router.register(r"layers", LayerViewSet)  # добавляем URLs для слоев
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    # Добавляем API URLs
+    path("", index, name="index"),
     path("api/", include(router.urls)),
 ]
