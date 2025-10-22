@@ -1,27 +1,66 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Буровой журнал</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
     <h1>Буровой журнал</h1>
-    
+
     <!-- Статус онлайн/оффлайн -->
     <div class="status">
-        <p>Статус: <span id="status-text">Загрузка...</span></p>
+      <p>Статус: <span id="status-text">Загрузка...</span></p>
     </div>
-    
+
+    <!-- Кнопка для показа формы -->
+    <button id="show-form-btn">Создать скважину</button>
+
+    <!-- Форма создания скважины (изначально скрыта) -->
+    <div id="well-form-container" class="well-form" style="display: none">
+      <h2>Новая скважина</h2>
+      <form id="create-well-form">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="well-name">Название скважины:</label>
+          <input type="text" id="well-name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="well-area">Участок:</label>
+          <input type="text" id="well-area" name="area" required />
+        </div>
+        <div class="form-group">
+          <label for="well-structure">Сооружение:</label>
+          <input type="text" id="well-structure" name="structure" required />
+        </div>
+        <div class="form-group">
+          <label for="well-depth">Проектная глубина (м):</label>
+          <input
+            type="number"
+            id="well-depth"
+            name="design_depth"
+            step="0.1"
+            min="0"
+            required
+          />
+        </div>
+        <div class="form-actions">
+          <button type="submit">Создать скважину</button>
+          <button type="button" id="cancel-form-btn">Отмена</button>
+        </div>
+      </form>
+    </div>
+
     <h2>Мои скважины</h2>
-    
+
     <!-- Контейнер для списка скважин -->
     <div id="wells-list">
-        <p>Загрузка скважин...</p>
+      <p>Загрузка скважин...</p>
     </div>
 
     <!-- Подключаем JavaScript -->
+    <script src="{% static 'js/offline-manager.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
-</body>
+  </body>
 </html>
