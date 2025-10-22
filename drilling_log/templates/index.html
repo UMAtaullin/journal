@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Буровой журнал</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Буровой журнал</h1>
+    
+    <!-- Простой индикатор статуса -->
+    <div id="status">
+        <p>Статус: <span id="status-text">Загрузка...</span></p>
+    </div>
+    
+    <p>Здесь скоро будет список скважин</p>
+
+    <script>
+        // Простейшая проверка онлайн/оффлайн статуса
+        function updateStatus() {
+            const statusElement = document.getElementById('status-text');
+            if (navigator.onLine) {
+                statusElement.textContent = '✅ Онлайн';
+                statusElement.style.color = 'green';
+            } else {
+                statusElement.textContent = '⚠️ Оффлайн';
+                statusElement.style.color = 'orange';
+            }
+        }
+        
+        // Слушаем изменения статуса сети
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        
+        // Инициализируем при загрузке
+        updateStatus();
+    </script>
+</body>
+</html>

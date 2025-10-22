@@ -8,3 +8,5 @@
   343  ll
   344  python manage.py migrate
   345  python manage.py runserver
+  358  git config user.name 'Ural'
+  359  git config user.email ataullinural@gmail.com

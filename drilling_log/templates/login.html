@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Вход в буровой журнал</title>
+</head>
+<body>
+    <h2>Вход в систему</h2>
+    
+    {% if form.errors %}
+        <p style="color: red;">Неверное имя пользователя или пароль.</p>
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label>Имя пользователя:</label>
+            {{ form.username }}
+        </div>
+        <div>
+            <label>Пароль:</label>
+            {{ form.password }}
+        </div>
+        <button type="submit">Войти</button>
+    </form>
+</body>
+</html>
