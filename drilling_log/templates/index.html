@@ -1,66 +1,113 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Буровой журнал</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="{% static 'drilling_log/css/style.css' %}">
+</head>
+<body>
     <h1>Буровой журнал</h1>
-
+    
     <!-- Статус онлайн/оффлайн -->
     <div class="status">
-      <p>Статус: <span id="status-text">Загрузка...</span></p>
+        <p>Статус: <span id="status-text">Загрузка...</span></p>
     </div>
-
-    <!-- Кнопка для показа формы -->
+    
+    <!-- Кнопка для показа формы скважины -->
     <button id="show-form-btn">Создать скважину</button>
-
-    <!-- Форма создания скважины (изначально скрыта) -->
-    <div id="well-form-container" class="well-form" style="display: none">
-      <h2>Новая скважина</h2>
-      <form id="create-well-form">
-        {% csrf_token %}
-        <div class="form-group">
-          <label for="well-name">Название скважины:</label>
-          <input type="text" id="well-name" name="name" required />
-        </div>
-        <div class="form-group">
-          <label for="well-area">Участок:</label>
-          <input type="text" id="well-area" name="area" required />
-        </div>
-        <div class="form-group">
-          <label for="well-structure">Сооружение:</label>
-          <input type="text" id="well-structure" name="structure" required />
-        </div>
-        <div class="form-group">
-          <label for="well-depth">Проектная глубина (м):</label>
-          <input
-            type="number"
-            id="well-depth"
-            name="design_depth"
-            step="0.1"
-            min="0"
-            required
-          />
-        </div>
-        <div class="form-actions">
-          <button type="submit">Создать скважину</button>
-          <button type="button" id="cancel-form-btn">Отмена</button>
-        </div>
-      </form>
+    
+    <!-- Форма создания скважины -->
+    <div id="well-form-container" class="well-form" style="display: none;">
+        <h2>Новая скважина</h2>
+        <form id="create-well-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="well-name">Название скважины:</label>
+                <input type="text" id="well-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="well-area">Участок:</label>
+                <input type="text" id="well-area" name="area" required>
+            </div>
+            <div class="form-group">
+                <label for="well-structure">Сооружение:</label>
+                <input type="text" id="well-structure" name="structure" required>
+            </div>
+            <div class="form-group">
+                <label for="well-depth">Проектная глубина (м):</label>
+                <input type="number" id="well-depth" name="design_depth" step="0.1" min="0" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit">Создать скважину</button>
+                <button type="button" id="cancel-form-btn">Отмена</button>
+            </div>
+        </form>
     </div>
-
+    
     <h2>Мои скважины</h2>
-
+    
     <!-- Контейнер для списка скважин -->
     <div id="wells-list">
-      <p>Загрузка скважин...</p>
+        <p>Загрузка скважин...</p>
+    </div>
+
+    <!-- Модальное окно для добавления слоев -->
+    <div id="layer-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Добавить геологический слой</h2>
+            
+            <!-- Форма добавления слоя -->
+            <form id="add-layer-form">
+                {% csrf_token %}
+                <input type="hidden" id="current-well-id">
+                
+                <div class="form-group">
+                    <label for="depth-from">Глубина от (м):</label>
+                    <input type="number" id="depth-from" name="depth_from" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="depth-to">Глубина до (м):</label>
+                    <input type="number" id="depth-to" name="depth_to" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="lithology">Литология:</label>
+                    <select id="lithology" name="lithology" required>
+                        <option value="">Выберите литологию</option>
+                        <option value="prs">ПРС</option>
+                        <option value="peat">Торф</option>
+                        <option value="loam">Суглинок</option>
+                        <option value="sandy_loam">Супесь</option>
+                        <option value="sand">Песок</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Описание:</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Дополнительное описание слоя"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit">Добавить слой</button>
+                    <button type="button" id="cancel-layer-btn">Отмена</button>
+                </div>
+            </form>
+            
+            <!-- Список слоев скважины -->
+            <div id="layers-list-container">
+                <h3>Геологические слои этой скважины:</h3>
+                <div id="layers-list">
+                    <p>Загрузка слоев...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Подключаем JavaScript -->
     <script src="{% static 'js/offline-manager.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
-  </body>
+</body>
 </html>

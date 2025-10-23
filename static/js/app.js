@@ -18,6 +18,21 @@ class DrillingApp {
     // Слушаем изменения статуса сети
     window.addEventListener('online', () => this.handleOnline());
     window.addEventListener('offline', () => this.handleOffline());
+    document.getElementById('show-form-btn').addEventListener('click', () => this.showForm());
+    document.getElementById('cancel-form-btn').addEventListener('click', () => this.hideForm());
+    document.getElementById('create-well-form').addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+    // Новые слушатели для модального окна слоев
+    document.querySelector('.close').addEventListener('click', () => this.closeLayerModal());
+    document.getElementById('cancel-layer-btn').addEventListener('click', () => this.closeLayerModal());
+    document.getElementById('add-layer-form').addEventListener('submit', (e) => this.handleLayerFormSubmit(e));
+
+    // Закрытие модального окна при клике вне его
+    window.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('layer-modal')) {
+        this.closeLayerModal();
+      }
+    });
 
     // Кнопка показа формы
     document.getElementById('show-form-btn').addEventListener('click', () => this.showForm());
@@ -27,6 +42,198 @@ class DrillingApp {
 
     // Отправка формы
     document.getElementById('create-well-form').addEventListener('submit', (e) => this.handleFormSubmit(e));
+  }
+
+  // Показать модальное окно для добавления слоев
+  showLayerModal(wellId, wellName) {
+    document.getElementById('layer-modal').style.display = 'block';
+    document.getElementById('modal-title').textContent = `Добавить слой для: ${wellName}`;
+    document.getElementById('current-well-id').value = wellId;
+
+    // Загружаем существующие слои для этой скважины
+    this.loadLayersForWell(wellId);
+  }
+
+  // Закрыть модальное окно
+  closeLayerModal() {
+    document.getElementById('layer-modal').style.display = 'none';
+    document.getElementById('add-layer-form').reset();
+  }
+
+  // Загрузка слоев для конкретной скважины
+  async loadLayersForWell(wellId) {
+    try {
+      const layersList = document.getElementById('layers-list');
+      layersList.innerHTML = '<p>Загрузка слоев...</p>';
+
+      let layers;
+      if (this.isOnline) {
+        const response = await fetch(`/api/layers/well_layers/?well_id=${wellId}`);
+        if (response.ok) {
+          layers = await response.json();
+        } else {
+          throw new Error('Ошибка загрузки слоев');
+        }
+      } else {
+        layers = await this.offlineManager.getLayersForWell(wellId);
+      }
+
+      this.displayLayers(layers);
+    } catch (error) {
+      console.error('Ошибка загрузки слоев:', error);
+      document.getElementById('layers-list').innerHTML = '<p>Ошибка загрузки слоев</p>';
+    }
+  }
+
+  // Отображение списка слоев
+  displayLayers(layers) {
+    const layersList = document.getElementById('layers-list');
+
+    if (layers.length === 0) {
+      layersList.innerHTML = '<p>Слоев пока нет. Добавьте первый слой.</p>';
+      return;
+    }
+
+    layersList.innerHTML = `
+        <table class="layers-table">
+            <thead>
+                <tr>
+                    <th>Глубина от (м)</th>
+                    <th>Глубина до (м)</th>
+                    <th>Мощность (м)</th>
+                    <th>Литология</th>
+                    <th>Описание</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${layers.map(layer => `
+                    <tr>
+                        <td>${layer.depth_from}</td>
+                        <td>${layer.depth_to}</td>
+                        <td><span class="thickness-badge">${layer.thickness}</span></td>
+                        <td>${this.getLithologyDisplay(layer.lithology)}</td>
+                        <td>${layer.description || '-'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+  }
+
+  // Получить отображаемое название литологии
+  getLithologyDisplay(lithology) {
+    const lithologyMap = {
+      'prs': 'ПРС',
+      'peat': 'Торф',
+      'loam': 'Суглинок',
+      'sandy_loam': 'Супесь',
+      'sand': 'Песок'
+    };
+    return lithologyMap[lithology] || lithology;
+  }
+
+  // Обработка отправки формы слоя
+  async handleLayerFormSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const wellId = document.getElementById('current-well-id').value;
+
+    const layerData = {
+      well: wellId,
+      depth_from: parseFloat(formData.get('depth_from')),
+      depth_to: parseFloat(formData.get('depth_to')),
+      lithology: formData.get('lithology'),
+      description: formData.get('description')
+    };
+
+    // Валидация: глубина "до" должна быть больше глубины "от"
+    if (layerData.depth_to <= layerData.depth_from) {
+      this.showMessage('Глубина "до" должна быть больше глубины "от"', 'error');
+      return;
+    }
+
+    if (this.isOnline) {
+      await this.createLayerOnline(layerData);
+    } else {
+      await this.createLayerOffline(layerData);
+    }
+  }
+
+  // Создание слоя в онлайн режиме
+  async createLayerOnline(layerData) {
+    try {
+      const response = await fetch('/api/layers/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCSRFToken(),
+        },
+        body: JSON.stringify(layerData)
+      });
+
+      if (response.ok) {
+        const newLayer = await response.json();
+        console.log('Слой создан на сервере:', newLayer);
+
+        this.showMessage('Слой успешно добавлен!', 'success');
+        document.getElementById('add-layer-form').reset();
+        await this.loadLayersForWell(layerData.well);
+      } else {
+        const errorData = await response.json();
+        console.error('Ошибка создания слоя:', errorData);
+        this.showMessage('Ошибка при добавлении слоя', 'error');
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      await this.createLayerOffline(layerData);
+    }
+  }
+
+  // Создание слоя в оффлайн режиме
+  async createLayerOffline(layerData) {
+    try {
+      const localLayer = await this.offlineManager.saveLayer(layerData);
+
+      this.showMessage('Слой сохранен локально (оффлайн режим)', 'success');
+      document.getElementById('add-layer-form').reset();
+      await this.loadLayersForWell(layerData.well);
+    } catch (error) {
+      console.error('Ошибка сохранения слоя локально:', error);
+      this.showMessage('Ошибка сохранения слоя', 'error');
+    }
+  }
+
+  // Обновим метод displayWells чтобы добавить кнопки управления слоями
+  displayWells(wells) {
+    const wellsList = document.getElementById('wells-list');
+    if (!wellsList) return;
+
+    if (wells.length === 0) {
+      wellsList.innerHTML = '<p>Скважин пока нет. Нажмите "Создать скважину" чтобы добавить первую.</p>';
+      return;
+    }
+
+    wellsList.innerHTML = wells.map(well => `
+        <div class="well-item">
+            <h3>${this.escapeHtml(well.name)}</h3>
+            <p><strong>Участок:</strong> ${this.escapeHtml(well.area)}</p>
+            <p><strong>Сооружение:</strong> ${this.escapeHtml(well.structure)}</p>
+            <p><strong>Проектная глубина:</strong> ${well.design_depth} м</p>
+            <p><small>Создана: ${new Date(well.created_at).toLocaleDateString()}</small></p>
+            ${well.sync_status === 'pending' ? '<p style="color: orange;">⚠️ Ожидает синхронизации</p>' : ''}
+            
+            <div class="well-actions">
+                <button class="btn-add-layer" onclick="drillingApp.showLayerModal('${well.id || well.offline_id}', '${this.escapeHtml(well.name)}')">
+                    Добавить слой
+                </button>
+                <button class="btn-view-layers" onclick="drillingApp.showLayerModal('${well.id || well.offline_id}', '${this.escapeHtml(well.name)}')">
+                    Просмотреть слои
+                </button>
+            </div>
+        </div>
+    `).join('');
   }
 
   // Обработчик перехода в онлайн

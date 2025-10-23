@@ -139,4 +139,63 @@ class OfflineManager {
       };
     });
   }
+  // Сохранить слой в локальную базу
+  async saveLayer(layerData) {
+    if (!this.db) await this.openDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+
+      // Создаем объект слоя для сохранения
+      const layer = {
+        ...layerData,
+        type: 'layer', // помечаем что это слой
+        offline_id: layerData.offline_id || `layer_offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        sync_status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        thickness: Math.round((layerData.depth_to - layerData.depth_from) * 100) / 100 // рассчитываем мощность
+      };
+
+      const request = store.put(layer);
+
+      request.onsuccess = () => {
+        console.log('Слой сохранен локально:', layer);
+        resolve(layer);
+      };
+
+      request.onerror = () => {
+        console.error('Ошибка сохранения слоя:', request.error);
+        reject(request.error);
+      };
+    });
+  }
+
+  // Получить все слои для конкретной скважины
+  async getLayersForWell(wellId) {
+    if (!this.db) await this.openDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const allItems = request.result;
+        // Фильтруем только слои для этой скважины
+        const layers = allItems.filter(item =>
+          item.type === 'layer' && item.well === wellId
+        );
+        // Сортируем по глубине
+        layers.sort((a, b) => a.depth_from - b.depth_from);
+        resolve(layers);
+      };
+
+      request.onerror = () => {
+        console.error('Ошибка загрузки слоев:', request.error);
+        reject(request.error);
+      };
+    });
+  }
 }
